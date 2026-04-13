@@ -48,7 +48,20 @@ async function main() {
   console.error("Logs from your program will appear here!");
 
   // TODO: Uncomment the lines below to pass the first stage
-  console.log(response.choices[0].message.content);
-}
+  const message = response.choices[0].message;
 
+  if (message.tool_calls !== undefined) {
+    const toolCall = message.tool_calls[0];
+
+    if (toolCall.type == "function") {
+      const functionName = toolCall.function.name;
+      const args = JSON.parse(toolCall.function.arguments);
+      const filePath = args.file_path;
+
+      console.log(await Bun.file(filePath).text())
+    }
+  } else {
+    console.log(response.choices[0].message.content);
+  }
+}
 main();
