@@ -110,7 +110,7 @@ async function main() {
             role: "tool", tool_call_id: toolCall.id, content: `Wrote ${result} bytes to
   ${filePath}`
           })
-        } else if (toolCall.type == "function" && toolCall.function.name == "Write") {
+        } else if (toolCall.type == "function" && toolCall.function.name == "Bash") {
           const args = JSON.parse(toolCall.function.arguments);
           const command = args.command;
 
