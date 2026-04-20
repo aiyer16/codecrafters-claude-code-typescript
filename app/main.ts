@@ -61,6 +61,23 @@ async function main() {
             }
           }
         }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "Bash",
+          "description": "Execute a shell command",
+          "parameters": {
+            "type": "object",
+            "required": ["command"],
+            "properties": {
+              "command": {
+                "type": "string",
+                "description": "The command to execute"
+              }
+            }
+          }
+        }
       }]
     });
 
@@ -93,6 +110,13 @@ async function main() {
             role: "tool", tool_call_id: toolCall.id, content: `Wrote ${result} bytes to
   ${filePath}`
           })
+        } else if (toolCall.type == "function" && toolCall.function.name == "Write") {
+          const args = JSON.parse(toolCall.function.arguments);
+          const command = args.command;
+
+          const result = await Bun.$`${command}`.quiet();
+          const output = result.stdout.toString() || result.stderr.toString()
+          messages.push({ role: "tool", tool_call_id: toolCall.id, content: output })
         }
       }
     } else {
