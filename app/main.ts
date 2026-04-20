@@ -85,10 +85,6 @@ async function main() {
       throw new Error("no choices in response");
     }
 
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    console.error("Logs from your program will appear here!");
-
-    // TODO: Uncomment the lines below to pass the first stage
     const message = response.choices[0].message;
     messages.push(message)
 
