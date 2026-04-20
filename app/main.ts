@@ -40,6 +40,27 @@ async function main() {
             "required": ["file_path"]
           }
         }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "Write",
+          "description": "Write content to a file",
+          "parameters": {
+            "type": "object",
+            "required": ["file_path", "content"],
+            "properties": {
+              "file_path": {
+                "type": "string",
+                "description": "The path of the file to write to"
+              },
+              "content": {
+                "type": "string",
+                "description": "The content to write to the file"
+              }
+            }
+          }
+        }
       }]
     });
 
@@ -56,12 +77,22 @@ async function main() {
 
     if (message.tool_calls !== undefined) {
       for (const toolCall of message.tool_calls) {
-        if (toolCall.type == "function") {
+        if (toolCall.type == "function" && toolCall.function.name == "Read") {
           const args = JSON.parse(toolCall.function.arguments);
           const filePath = args.file_path;
 
           const result = await Bun.file(filePath).text()
           messages.push({ role: "tool", tool_call_id: toolCall.id, content: result })
+        } else if (toolCall.type == "function" && toolCall.function.name == "Write") {
+          const args = JSON.parse(toolCall.function.arguments);
+          const filePath = args.file_path;
+          const content = args.content
+
+          const result = await Bun.write(filePath, content)
+          messages.push({
+            role: "tool", tool_call_id: toolCall.id, content: `Wrote ${result} bytes to
+  ${filePath}`
+          })
         }
       }
     } else {
