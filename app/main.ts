@@ -114,7 +114,7 @@ async function main() {
           const args = JSON.parse(toolCall.function.arguments);
           const command = args.command;
 
-          const result = await Bun.$`${command}`.quiet();
+          const result = await Bun.$`sh -c ${command}`.quiet();
           const output = result.stdout.toString() || result.stderr.toString()
           messages.push({ role: "tool", tool_call_id: toolCall.id, content: output })
         }
