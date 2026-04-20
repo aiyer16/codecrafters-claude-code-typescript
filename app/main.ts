@@ -18,50 +18,58 @@ async function main() {
     baseURL: baseURL,
   });
 
-  const response = await client.chat.completions.create({
-    model: "anthropic/claude-haiku-4.5",
-    messages: [{ role: "user", content: prompt }],
-    tools: [{
-      "type": "function",
-      "function": {
-        "name": "Read",
-        "description": "Read and return the contents of a file",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "file_path": {
-              "type": "string",
-              "description": "The path to the file to read"
-            }
-          },
-          "required": ["file_path"]
+  const messages: OpenAI.ChatCompletionMessageParam[] = [{ role: "user", content: prompt }]
+
+  while (true) {
+    const response = await client.chat.completions.create({
+      model: "anthropic/claude-haiku-4.5",
+      messages: messages,
+      tools: [{
+        "type": "function",
+        "function": {
+          "name": "Read",
+          "description": "Read and return the contents of a file",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "file_path": {
+                "type": "string",
+                "description": "The path to the file to read"
+              }
+            },
+            "required": ["file_path"]
+          }
+        }
+      }]
+    });
+
+    if (!response.choices || response.choices.length === 0) {
+      throw new Error("no choices in response");
+    }
+
+    // You can use print statements as follows for debugging, they'll be visible when running tests.
+    console.error("Logs from your program will appear here!");
+
+    // TODO: Uncomment the lines below to pass the first stage
+    const message = response.choices[0].message;
+    messages.push(message)
+
+    if (message.tool_calls !== undefined) {
+      for (const toolCall of message.tool_calls) {
+        if (toolCall.type == "function") {
+          const args = JSON.parse(toolCall.function.arguments);
+          const filePath = args.file_path;
+
+          const result = await Bun.file(filePath).text()
+          messages.push({ role: "tool", tool_call_id: toolCall.id, content: result })
         }
       }
-    }]
-  });
-
-  if (!response.choices || response.choices.length === 0) {
-    throw new Error("no choices in response");
-  }
-
-  // You can use print statements as follows for debugging, they'll be visible when running tests.
-  console.error("Logs from your program will appear here!");
-
-  // TODO: Uncomment the lines below to pass the first stage
-  const message = response.choices[0].message;
-
-  if (message.tool_calls !== undefined) {
-    const toolCall = message.tool_calls[0];
-
-    if (toolCall.type == "function") {
-      const functionName = toolCall.function.name;
-      const args = JSON.parse(toolCall.function.arguments);
-      const filePath = args.file_path;
-
-      console.log(await Bun.file(filePath).text())
+    } else {
+      console.log(response.choices[0].message.content);
+      return
     }
-  } else {
-    console.log(response.choices[0].message.content);
   }
 }
+
+
 main();
